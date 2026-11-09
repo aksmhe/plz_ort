@@ -1,6 +1,7 @@
 # PLZ Ort für ERPNext
 
-Füllt im Formular **Adresse** nach dem Eintippen einer **deutschen Postleitzahl** automatisch **Ort** und **Bundesland** aus.
+Füllt im Formular **Adresse** nach dem Eintippen einer Postleitzahl automatisch **Ort** und **Bundesland** bzw. **Kanton** aus.
+Unterstützt werden **Deutschland, Österreich, Schweiz und Liechtenstein**.
 Ort und Bundesland müssen nicht mehr abgetippt werden. Tippfehler wie „Frankfrut“ fallen weg.
 
 - Läuft mit **ERPNext / Frappe 15 und 16**
@@ -23,10 +24,20 @@ Ort und Bundesland müssen nicht mehr abgetippt werden. Tippfehler wie „Frankf
 
 ## 1. Was die App macht
 
-- **Ort und Bundesland automatisch:** Sobald im Feld **Postleitzahl** fünf Ziffern stehen, fragt ERPNext die OpenPLZ API ab. Danach trägt es **Ort** (*City*) und **Bundesland** (*State*) ein.
+- **Ort und Bundesland automatisch:** Sobald im Feld **Postleitzahl** eine passende PLZ steht, fragt ERPNext die OpenPLZ API ab. Danach trägt es **Ort** (*City*) und **Bundesland/Kanton** (*State*) ein.
+- **Vier Länder:** Welches Land abgefragt wird, richtet sich nach dem Feld **Land**:
+
+  | Land | PLZ | Feld Bundesland/Kanton bekommt |
+  |---|---|---|
+  | `Germany` | 5 Ziffern | Bundesland, z. B. `Hessen` |
+  | `Austria` | 4 Ziffern | Bundesland, z. B. `Oberösterreich` |
+  | `Switzerland` | 4 Ziffern | Kanton, z. B. `Zürich` |
+  | `Liechtenstein` | 4 Ziffern | bleibt leer, Liechtenstein hat keine Bundesländer |
 - **Mehrere Orte zu einer PLZ:** Gehören zu einer PLZ mehrere Orte, öffnet sich ein Fenster. Man wählt dort den richtigen Ort aus und klickt **Übernehmen**.
 - **Ortsteile bleiben stehen:** Steht im Feld **Ort** schon ein Name, der den gefundenen Ort enthält, bleibt er unverändert. Beispiel: „Selm Bork“ bei PLZ 59379.
-- **Nur für Deutschland:** Ist als **Land** etwas anderes als `Germany` eingetragen, passiert nichts. Ist das Feld **Land** leer, trägt die App `Germany` ein.
+- **Land leer:** Bei 5 Ziffern sucht die App in Deutschland. Bei 4 Ziffern sucht sie in Österreich, der Schweiz und Liechtenstein. Gibt es die PLZ in mehreren Ländern, steht das Land im Auswahlfenster in Klammern dahinter. Das passende Land trägt die App danach ins Feld **Land** ein.
+- **Land nachträglich geändert:** Steht schon eine PLZ im Formular und man ändert das **Land**, sucht die App neu.
+- **Andere Länder:** Steht als **Land** z. B. `France`, passiert nichts.
 - **Unbekannte PLZ:** Unten rechts erscheint kurz der Hinweis *„PLZ … nicht gefunden“*. Die Felder bleiben unverändert.
 
 So sieht das aus:
@@ -36,7 +47,11 @@ So sieht das aus:
 | `61197` | leer | `Florstadt` | `Hessen` |
 | `59379` | `Selm Bork` | `Selm Bork` (bleibt) | `Nordrhein-Westfalen` |
 | PLZ mit mehreren Orten | leer | Auswahlfenster | passend zum gewählten Ort |
-| `1234` (nur 4 Ziffern) | – | nichts passiert | nichts passiert |
+| `1010`, Land `Austria` | leer | `Wien, Innere Stadt` | `Wien` |
+| `8001`, Land `Switzerland` | leer | `Zürich` | `Zürich` (Kanton) |
+| `9490`, Land `Liechtenstein` | leer | `Vaduz` | leer |
+| `4600`, Land leer | leer | Auswahlfenster, z. B. „Wels (Österreich)“, „Olten (Schweiz)“ | passend zur Auswahl |
+| `1234`, Land `Germany` | – | nichts passiert (nur 4 Ziffern) | nichts passiert |
 | `00000` | – | Hinweis „nicht gefunden“ | – |
 
 ---
@@ -121,6 +136,15 @@ Alle Befehle in dieser Tabelle **zeigen nur etwas an und ändern nichts**. Man f
   docker exec <backend-container> bench --site <site> uninstall-app plz_ort --yes
   ```
 
+#### Auf eine neue Version aktualisieren
+
+Ist `plz_ort` schon installiert, baut man das Image wie in Schritt 3 neu, aber mit **`--no-cache`** und einem **neuen Tag**. Ohne `--no-cache` holt Docker den neuen Code von GitHub nicht.
+Danach geht es weiter mit Schritt 4 und 5. Statt `install-app` reicht in Schritt 6 dann:
+```bash
+docker exec <backend-container> bench --site <site> migrate
+```
+Zum Schluss die Seite im Browser mit **Strg + Umschalt + R** neu laden.
+
 ### Mit bench (klassische Installation)
 
 ```bash
@@ -156,6 +180,7 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 
 1. Suchleiste → **Adresse** → **Neu** (*Add Address*).
 2. Bei **Land** `Germany` wählen oder das Feld leer lassen.
+   Für die anderen Länder z. B. `Austria` mit PLZ `1010` oder `Switzerland` mit PLZ `8001`.
 3. Bei **Postleitzahl** z. B. `61197` eintippen und das Feld verlassen, mit der Tab-Taste oder einem Klick daneben.
 4. Bei **Ort** muss jetzt `Florstadt` stehen und bei **Bundesland** `Hessen`.
 5. Zum Testen das Formular **ohne Speichern** wieder schließen.
@@ -164,7 +189,8 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 
 ## 5. Grenzen
 
-- **Nur deutsche Postleitzahlen** mit genau fünf Ziffern. Österreich und die Schweiz gehen nicht.
+- **Nur vier Länder:** Deutschland, Österreich, Schweiz und Liechtenstein. Für andere Länder füllt die App nichts aus.
+- **Höchstens 50 Orte je PLZ:** Mehr liefert die OpenPLZ API auf einmal nicht.
 - **Internet nötig:** Die Abfrage läuft **direkt aus dem Browser** des Benutzers zur OpenPLZ API. Blockiert eine Firewall oder ein Werbeblocker `openplzapi.org`, wird nichts ausgefüllt.
 - **Nur im Formular:** Beim **Datenimport** (*Data Import*) oder bei Adressen, die über die API angelegt werden, füllt die App nichts aus.
 - **Straßennamen** füllt die App nicht aus, nur Ort und Bundesland.
@@ -177,7 +203,7 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 | Was passiert | Ursache | Lösung |
 |---|---|---|
 | Nach Eingabe der PLZ passiert nichts | Browser hat noch das alte Skript | Seite mit **Strg + Umschalt + R** neu laden |
-| Es passiert weiterhin nichts | Feld **Land** steht nicht auf `Germany` | Land auf `Germany` stellen und PLZ neu eintippen |
+| Es passiert weiterhin nichts | Feld **Land** steht auf einem anderen Land oder die Ziffernzahl passt nicht | Land auf `Germany`, `Austria`, `Switzerland` oder `Liechtenstein` stellen bzw. leeren und PLZ neu eintippen |
 | Es passiert weiterhin nichts | App nicht in der Site installiert | `docker exec <backend-container> bench --site <site> list-apps`: `plz_ort` muss dabei sein, sonst Schritt 6 der Installation wiederholen |
 | Es passiert weiterhin nichts | `openplzapi.org` wird blockiert | Im Browser `https://openplzapi.org/de/Localities?postalCode=61197` öffnen. Erscheint kein Text mit „Florstadt“, Firewall oder Werbeblocker prüfen. |
 | Auswahlfenster erscheint zweimal oder Felder flackern | Altes Client Script läuft noch | Client Script abschalten, siehe [3.1](#31-altes-client-script-abschalten-falls-vorhanden) |

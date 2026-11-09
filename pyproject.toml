@@ -3,7 +3,7 @@ name = "plz_ort"
 authors = [
     { name = "AffiKSys", email = "m.heide@affiksys.com" }
 ]
-description = "Füllt in ERPNext/Frappe bei deutschen Adressen Ort und Bundesland aus der Postleitzahl (OpenPLZ API)."
+description = "Füllt in ERPNext/Frappe Ort und Bundesland/Kanton aus der Postleitzahl, für Deutschland, Österreich, Schweiz und Liechtenstein (OpenPLZ API)."
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
