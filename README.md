@@ -7,6 +7,7 @@ Ort und Bundesland müssen nicht mehr abgetippt werden. Tippfehler wie „Frankf
 - Läuft mit **ERPNext / Frappe 15 und 16**
 - Kostenlos, ohne Anmeldung und ohne Schlüssel. Datenquelle ist die freie [OpenPLZ API](https://openplzapi.org).
 - Es wird **nur die Postleitzahl** gesendet, keine Namen und keine Adressen.
+- Entwickelt von [AffiKSys](https://affiksys.com/), siehe [unten](#entwickelt-von).
 
 ---
 
@@ -218,6 +219,15 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 - Die App speichert **nichts** selbst. Sie füllt nur Felder im offenen Formular aus. Gespeichert wird erst, wenn der Benutzer auf **Speichern** klickt.
 - Die App braucht **keine Zugangsdaten** und keine Schlüssel. Im Code stehen keine Passwörter.
 - Die App ändert **keine Rechte** und legt keine neuen Tabellen an.
+
+---
+
+## Entwickelt von
+
+<a href="https://affiksys.com/" title="Zur Webseite von AffiKSys: affiksys.com"><img src="https://raw.githubusercontent.com/aksmhe/erpnext_girocode/main/docs/affiksys-karte.png" alt="AffiKSys – Affiliate KDP Systems" width="210"></a>
+
+Entwickelt von der **[Lerner & Heide AffiKSys GbR](https://affiksys.com/)** für den eigenen Einsatz mit ERPNext und kostenlos für alle bereitgestellt.
+Fehler oder Ideen? Gern als [Issue auf GitHub](https://github.com/aksmhe/plz_ort/issues) melden.
 
 ---
 
