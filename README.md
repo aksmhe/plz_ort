@@ -1,6 +1,7 @@
 # PLZ Ort für ERPNext
 
-Füllt im Formular **Adresse** nach dem Eintippen einer Postleitzahl automatisch **Ort** und **Bundesland** bzw. **Kanton** aus.
+Füllt in ERPNext nach dem Eintippen einer Postleitzahl automatisch **Ort** und **Bundesland** bzw. **Kanton** aus.
+Das klappt in **allen Formularen und Dialogen** mit PLZ- und Ort-Feld, z. B. **Adresse**, **Schnellerfassung beim neuen Kunden oder Lieferanten** und **Lager**.
 Unterstützt werden **Deutschland, Österreich, Schweiz und Liechtenstein**.
 Ort und Bundesland müssen nicht mehr abgetippt werden. Tippfehler wie „Frankfrut“ fallen weg.
 
@@ -14,6 +15,8 @@ Ort und Bundesland müssen nicht mehr abgetippt werden. Tippfehler wie „Frankf
 ## Inhalt
 
 1. [Was die App macht](#1-was-die-app-macht)
+   - [Wo die App wirkt](#wo-die-app-wirkt)
+   - [Eigene Felder ergänzen](#eigene-felder-ergänzen)
 2. [Installation](#2-installation)
 3. [Einrichtung in ERPNext](#3-einrichtung-in-erpnext)
 4. [Ausprobieren](#4-ausprobieren)
@@ -54,6 +57,34 @@ So sieht das aus:
 | `4600`, Land leer | leer | Auswahlfenster, z. B. „Wels (Österreich)“, „Olten (Schweiz)“ | passend zur Auswahl |
 | `1234`, Land `Germany` | – | nichts passiert (nur 4 Ziffern) | nichts passiert |
 | `00000` | – | Hinweis „nicht gefunden“ | – |
+
+### Wo die App wirkt
+
+Die App erkennt PLZ-Felder von selbst, in normalen Formularen und in Dialogen. Einzelne Formulare muss man nicht einrichten.
+Sie wird aktiv, sobald im selben Formular oder Dialog ein **PLZ-Feld** und ein **Ort-Feld** stehen:
+
+| PLZ-Feld | Ort-Feld | Bundesland-Feld | Land-Feld | Wo es vorkommt (ERPNext 16) |
+|---|---|---|---|---|
+| `pincode` | `city` | `state` | `country` | Formular **Adresse** |
+| `pincode` | `city` | `state` | `country_address` | **Schnellerfassung** bei **Neu Kunde** und **Neu Lieferant** |
+| `pin` | `city` | `state` | `country` | Formular **Lager** (*Warehouse*) |
+
+Eigene Felder (*Custom Fields*) mit diesen Namen funktionieren ebenfalls.
+Kunde, Lieferant, Lead, Kontakt und Firma haben in ERPNext **kein eigenes PLZ-Feld**. Ihre Adressen legt man im Formular **Adresse** an, und dort wirkt die App.
+
+### Eigene Felder ergänzen
+
+Heißen die Felder anders, z. B. bei eigenen Doctypes, kann man ein weiteres Feldpaar anmelden.
+Das geht in einer eigenen App (über `app_include_js`) oder in einem **Client Script**:
+
+```js
+plz_ort.feldpaare.push({
+	plz: "meine_plz",        // Pflicht
+	ort: "mein_ort",         // Pflicht
+	region: "mein_bundesland", // optional
+	land: ["mein_land"],     // optional, das erste vorhandene Feld zählt
+});
+```
 
 ---
 
@@ -144,6 +175,10 @@ Danach geht es weiter mit Schritt 4 und 5. Statt `install-app` reicht in Schritt
 ```bash
 docker exec <backend-container> bench --site <site> migrate
 ```
+Danach den Cache leeren, sonst liefert ERPNext unter Umständen noch die alten Skripte aus:
+```bash
+docker exec <backend-container> bench --site <site> clear-cache
+```
 Zum Schluss die Seite im Browser mit **Strg + Umschalt + R** neu laden.
 
 ### Mit bench (klassische Installation)
@@ -166,7 +201,7 @@ Die App braucht **keine Einstellungen**. Nach der Installation funktioniert sie 
 Wurde die gleiche Funktion vorher als **Client Script** eingerichtet, läuft die Abfrage sonst doppelt.
 
 1. Suchleiste → **Client Script** öffnen.
-2. Nach Skripten für den Doctype **Address** suchen, z. B. mit dem Namen „Adresse PLZ Ort“.
+2. Nach Skripten suchen, die Ort oder Bundesland aus der PLZ füllen, etwa für den Doctype **Address** mit dem Namen „Adresse PLZ Ort“.
 3. Skript öffnen, den Haken **Aktiviert** (*Enabled*) herausnehmen und **speichern**.
 
 > Abschalten genügt. Das Skript muss nicht gelöscht werden, so bleibt es als Rückfall erhalten.
@@ -186,6 +221,8 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 4. Bei **Ort** muss jetzt `Florstadt` stehen und bei **Bundesland** `Hessen`.
 5. Zum Testen das Formular **ohne Speichern** wieder schließen.
 
+**Schnellerfassung testen:** Suchleiste → **Kunde** → **Neu**. Im Dialog unter *Primary Address Details* bei **ZIP Code** `61197` eintippen und das Feld verlassen. Bei **City** muss `Florstadt` stehen, bei **State/Province** `Hessen` und bei **Country** `Germany`. Den Dialog ohne Speichern schließen.
+
 ---
 
 ## 5. Grenzen
@@ -193,7 +230,7 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 - **Nur vier Länder:** Deutschland, Österreich, Schweiz und Liechtenstein. Für andere Länder füllt die App nichts aus.
 - **Höchstens 50 Orte je PLZ:** Mehr liefert die OpenPLZ API auf einmal nicht.
 - **Internet nötig:** Die Abfrage läuft **direkt aus dem Browser** des Benutzers zur OpenPLZ API. Blockiert eine Firewall oder ein Werbeblocker `openplzapi.org`, wird nichts ausgefüllt.
-- **Nur im Formular:** Beim **Datenimport** (*Data Import*) oder bei Adressen, die über die API angelegt werden, füllt die App nichts aus.
+- **Nur in der Oberfläche:** Beim **Datenimport** (*Data Import*) oder bei Adressen, die über die API angelegt werden, füllt die App nichts aus.
 - **Straßennamen** füllt die App nicht aus, nur Ort und Bundesland.
 - **Verfügbarkeit:** Die OpenPLZ API ist ein freier Dienst ohne Zusage, dass er immer erreichbar ist. Ist sie nicht erreichbar, passiert einfach nichts. Man kann Ort und Bundesland dann wie gewohnt von Hand eintragen.
 
@@ -204,6 +241,8 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 | Was passiert | Ursache | Lösung |
 |---|---|---|
 | Nach Eingabe der PLZ passiert nichts | Browser hat noch das alte Skript | Seite mit **Strg + Umschalt + R** neu laden |
+| Nach einem Update passiert nichts | ERPNext liefert noch die alten Skripte | `docker exec <backend-container> bench --site <site> clear-cache`, danach neu laden |
+| In einem Formular passiert nichts, in der Adresse schon | Das Formular hat kein PLZ-Feld mit bekanntem Namen | Feldpaar ergänzen, siehe [Eigene Felder ergänzen](#eigene-felder-ergänzen) |
 | Es passiert weiterhin nichts | Feld **Land** steht auf einem anderen Land oder die Ziffernzahl passt nicht | Land auf `Germany`, `Austria`, `Switzerland` oder `Liechtenstein` stellen bzw. leeren und PLZ neu eintippen |
 | Es passiert weiterhin nichts | App nicht in der Site installiert | `docker exec <backend-container> bench --site <site> list-apps`: `plz_ort` muss dabei sein, sonst Schritt 6 der Installation wiederholen |
 | Es passiert weiterhin nichts | `openplzapi.org` wird blockiert | Im Browser `https://openplzapi.org/de/Localities?postalCode=61197` öffnen. Erscheint kein Text mit „Florstadt“, Firewall oder Werbeblocker prüfen. |
@@ -216,7 +255,7 @@ Damit der Browser das neue Skript lädt, die Seite einmal mit **Strg + Umschalt 
 ## 7. Datenschutz und Sicherheit
 
 - An die OpenPLZ API wird **nur die Postleitzahl** gesendet. Name, Straße, Firma oder E-Mail bleiben in ERPNext.
-- Die App speichert **nichts** selbst. Sie füllt nur Felder im offenen Formular aus. Gespeichert wird erst, wenn der Benutzer auf **Speichern** klickt.
+- Die App speichert **nichts** selbst. Sie füllt nur Felder im offenen Formular oder Dialog aus. Gespeichert wird erst, wenn der Benutzer auf **Speichern** klickt.
 - Die App braucht **keine Zugangsdaten** und keine Schlüssel. Im Code stehen keine Passwörter.
 - Die App ändert **keine Rechte** und legt keine neuen Tabellen an.
 
